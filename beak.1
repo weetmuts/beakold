@@ -1,0 +1,38 @@
+
+.TH BEAK 1
+.SH NAME
+beak \- a backup and mirroring tool
+.SH SYNOPSIS
+.B beak config
+
+.B beak push [config] [remote]
+
+.B beak mount [config] [remote]
+
+.B beak umount [config] [remote]
+
+.SH DESCRIPTION
+.B beak
+backups/mirrors/copies your files to remote systems. Relies on btrfs to make snapshots of your data
+and then tarredfs to bundle the files up into nice large chunks and then rclone to copy the data
+(possibly encrypted) to remote storage services.
+
+.B beak config
+
+
+.SH AUTHOR
+Written by Fredrik Öhrström.
+
+.SH COPYRIGHT
+Copyright \(co 2016 Fredrik Öhrström.
+.br
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+.br
+There is NO WARRANTY, to the extent permitted by law.
+
+
+
+
+
