@@ -1,7 +1,7 @@
 
 $(shell mkdir -p build)
 
-all: build/beak build/beak-config build/beak-push build/beak-mount build/beak-umount
+all: build/beak build/beak-config build/beak-mount build/beak-push build/beak-status build/beak-umount
 
 build/beak: beak.sh
 	cp beak.sh build/beak

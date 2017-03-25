@@ -77,6 +77,23 @@ function convertToSubvolume {
     echo
 }
 
+function findDeviceAndMount {
+    dir="$directory"
+    while true
+    do
+        dev=$(df "$dir" | tail -n 1 | cut -f 1 -d ' ')
+        mount=$(df "$dir" | tail -n 1  | tr -s ' ' |  cut -f 6 -d ' ')
+        if [ "$dev" != "-" ]; then break; fi
+        if [ "$dir" == "/" ]; then break; fi
+        dir=$(dirname "$dir")
+        if [ "$dir" == "." ]; then break; fi
+    done
+    mountdevice="$dev"
+    mountpoint="$mount"
+    echo device=$dev mount=$mount
+    
+}
+
 function newConfig {
     echo 
     while true
@@ -113,18 +130,19 @@ function newConfig {
             continue
         fi
 
-        check=$(findmnt -o FS-OPTIONS -nt btrfs --target /alfa/Test | grep -o user_subvol_rm_allowed)
+        findDeviceAndMount
+        check=$(findmnt -o FS-OPTIONS -nt btrfs --target "$directory" | grep -o user_subvol_rm_allowed)
         if [ "$check" != "user_subvol_rm_allowed" ]
         then
             echo 
-            echo You cannot delete your own snapshots in this btrfs mount!
-            echo The flag user_subvol_rm_allowed is not set on the mount!
+            echo You cannot delete your own snapshots in this btrfs mount
+            echo because the flag user_subvol_rm_allowed is not set.
             echo
             echo For a temporary solution you can execute the command:
             echo "sudo mount -t btrfs -o remount,user_subvol_rm_allowed $mountdevice \"$mountpoint\""
             echo
-            echo or for a permanent solution user_subvol_rm_allowed
-            echo the mount options in /etc/fstab
+            echo or for a permanent solution add user_subvol_rm_allowed
+            echo to the mount options in /etc/fstab
             exit        
         fi
         

@@ -31,10 +31,10 @@ function finish {
 }
 trap finish EXIT
 
-local="$1"
+name="$1"
 remote="$2"
 
-config="$BEAK/${local}.cfg"
+config="$BEAK/${name}.cfg"
 if [ ! -f "$config" ]
 then
     echo No such config!
@@ -51,7 +51,7 @@ then
     fi
 fi
 
-remotename="${remote%%:*}"
+remotename=$(echo "$remote" | tr -d ':' | tr '/' '-')
 
 beakdir=$(grep beakdir= "$config" | sed 's/^beakdir=//')
 if [ ! -d "$beakdir" ]
@@ -60,8 +60,8 @@ then
     exit 1
 fi
 
-mountdir="$beakdir/Remote_${local}_${remotename}"
-tarredfsmountdir="$beakdir/.Remote_${local}_${remotename}"
+mountdir="$beakdir/Remote_${remotename}_${name}"
+tarredfsmountdir="$beakdir/.Remote_${remotename}_${name}"
 
 if [ ! -d "$mountdir" ] && [ ! -d "$mountdir" ]
 then

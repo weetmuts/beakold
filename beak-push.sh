@@ -16,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-date=$(date +%Y-%m-%d_%H-%M)
+date=$(date -Iseconds)
 
 BEAK="$HOME/.beak"
 ok="false"
@@ -47,10 +47,11 @@ function finish {
 }
 trap finish EXIT
 
-local="$1"
+name="$1"
 remote="$2"
 
-config="$BEAK/${local}.cfg"
+config="$BEAK/${name}.cfg"
+pushes="$BEAK/${name}.pushes"
 if [ ! -f "$config" ]
 then
     echo No such config!
@@ -110,7 +111,7 @@ fi
 
 UPLOAD=false
 
-echo COMMAND: rclone sync "$beakdir/NowTarredfs/" "$remote"
+echo COMMAND: rclone sync "$beakdir/NowTarredfs/" "$remote/$name/"
 
 echo "Do you wish to perform the backup?"
 while true; do
@@ -124,17 +125,18 @@ done
 
 if [ $UPLOAD == "true" ]; then
     echo 'Uploading...'
-    rclone sync "$beakdir/NowTarredfs/" "$remote"
+    rclone sync "$beakdir/NowTarredfs/" "$remote/$name/"
 
     cleanup
     mv "$beakdir/Now" "$beakdir/Backup-$date"
+    echo "$date $remote/$name" >> "$pushes"
 
-    if [ "$PREV" != "NoPreviousBackup" ]
-    then
-        ls --directory "$beakdir/Backup-"* | \
-            head --lines=-3 | \
-            xargs --no-run-if-empty --verbose btrfs subvolume delete
-    fi
+#    if [ "$PREV" != "NoPreviousBackup" ]
+#    then
+#        ls --directory "$beakdir/Backup-"* | \
+#            head --lines=-3 | \
+#            xargs --no-run-if-empty --verbose btrfs subvolume delete
+#    fi
 else
     cleanup
     btrfs property set -ts "$beakdir/Now" ro false
