@@ -43,6 +43,12 @@ do
     where="$(grep -h directory "$i" | cut -f 2 -d =)"
     printf "%-16s      %s\n" "$root" "$where"
     n=$(date +%s)
+
+#    rclone -q ls gdrive:/Backups/test/.beak | grep -o -e  "mirror.*"
+#    some_command | while read line ; do
+#       echo === $line ===
+#        done
+    
     if [ -s "$pushes" ]
     then
         while read l; do

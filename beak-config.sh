@@ -19,6 +19,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 date=$(date +%Y-%m-%d_%H-%M)
 
 BEAK="$HOME/.beak"
+HOST="$(hostname)"
 ok="false"
 name=""
 directory=""
@@ -53,8 +54,9 @@ function convertToSubvolume {
         echo Failed to create subvolume!
         exit
     fi
+    nam=$(basename "$tmp")
     echo Moving contents into "$tmp"
-    find "$directory" -mindepth 1 -maxdepth 1 -exec mv "{}" "$tmp" ";"
+    find "$directory" -mindepth 1 -maxdepth 1 -not -name "$nam" -exec mv "{}" "$tmp" ";"
     #LC_ALL=C ls -l other_file | {
     #    read -r permissions links user group stuff;
     #    chown -- "$user:$group" file_to_change
@@ -117,11 +119,20 @@ function newConfig {
     
     while true
     do
-        read -p "directory>" directory
+        read -e -p "directory>" directory
         
         if [ ! -d "$directory" ]; then
             echo Directory does not exist!
-            continue
+            echo Would you like to create it?
+            read -p "yn>" yn
+            case $yn in
+                [yY] ) mkdir -p "$directory";;
+                * ) continue ;;
+            esac
+            if [ ! -d "$directory" ]; then
+                echo Directory could not be created!
+                continue
+            fi
         fi
         
         if [ $(stat -f --format=%T "$directory") != "btrfs" ]
@@ -260,7 +271,15 @@ EOF
     esac
 }
 
+function checkBeakDir {
+    if [ ! -d "$BEAK" ]
+    then
+        mkdir -p "$BEAK"
+    fi
+}
+
 function menu {
+    checkBeakDir
     echo
     echo "Name                  Directory"
     echo "====                  ========="

@@ -17,7 +17,7 @@
 #
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 date=$(date -Iseconds)
-HOST="$(hostname)"
+
 BEAK="$HOME/.beak"
 ok="false"
 
@@ -37,7 +37,7 @@ function finish {
     else
         cleanup
         btrfs property set -ts "$beakdir/Now" ro false   
-        btrfs subvolume delete "$beakdir/Now" > /dev/null
+        btrfs subvolume delete "$beakdir/Now"        
         echo 
     fi
 }
@@ -46,9 +46,9 @@ trap finish EXIT
 name="$1"
 remote="$2"
 
-config_file="$BEAK/${name}.cfg"
-push_file="$BEAK/${name}.pushes"
-if [ ! -f "$config_file" ]
+config="$BEAK/${name}.cfg"
+pushes="$BEAK/${name}.pushes"
+if [ ! -f "$config" ]
 then
     echo No such config!
     exit 1
@@ -56,7 +56,7 @@ fi
 
 if [ ! -z "$remote" ]
 then
-    hasremote=$(grep "$remote" "$config_file")
+    hasremote=$(grep "$remote" "$config")
     if [ "$hasremote" != "remote=$remote" ]
     then
         echo No such remote!
@@ -64,8 +64,8 @@ then
     fi
 fi
 
-directory=$(grep directory= "$config_file" | sed 's/^directory=//')
-beakdir=$(grep beakdir= "$config_file" | sed 's/^beakdir=//')
+directory=$(grep directory= "$config" | sed 's/^directory=//')
+beakdir=$(grep beakdir= "$config" | sed 's/^beakdir=//')
 if [ ! -d "$directory" ]
 then
     echo Configration error! No directory to backup \"$directory\"
@@ -78,9 +78,9 @@ then
 fi
 
 if [ -d "$beakdir/Now" ]; then
-    # echo "$beakdir/Now" exists! Removing! 
+    echo "$beakdir/Now" exists! Removing! 
     btrfs property set -ts "$beakdir/Now" ro false   
-    btrfs subvolume delete "$beakdir/Now" > /dev/null
+    btrfs subvolume delete "$beakdir/Now"
 fi
 
 TEST=$(cd "$beakdir" && echo Backup-*)
@@ -93,19 +93,16 @@ else
     echo This is the first backup.
 fi
 
-btrfs subvolume snapshot -r "$directory" "$beakdir/Now" > /dev/null
+btrfs subvolume snapshot -r "$directory" "$beakdir/Now"
 
 mkdir -p "$beakdir/NowTarredfs"
 tarredfs -q -tl "$beakdir/NowTarredfs.list" -x '\.beak/' -ta 50M "$beakdir/Now" "$beakdir/NowTarredfs"
 
 if [ "$PREV" != "NoPreviousBackup" ]
 then
-    diff "$beakdir/NowTarredfs.list" "$beakdir/${PREV}.list" > /dev/null
-    if [ "$?" = "0" ]; then
-        echo No changes within "$directory"
-        echo Exiting.
-        exit
-    fi
+    echo ===============
+    diff "$beakdir/NowTarredfs.list" "$beakdir/${PREV}.list"
+    echo ===============
 fi
 
 UPLOAD=false
@@ -122,38 +119,38 @@ while true; do
     esac
 done
 
-if [ $UPLOAD == "true" ]; then
-    echo 'Uploading...'
+if [ $DOWNLOAD == "true" ]; then
+    echo 'Downloading...'
     mkdir -p "$beakdir/beak"
     now=$(date -Iseconds)
-    touch "$beakdir/beak/mirroring_${host}_${date}_started_${now}"
+    touch "$beakdir/beak/mirror_${date}_started_${now}"
     rclone -q copy "$beakdir/beak/" "$remote/$name/.beak/"
 
     rclone sync "$beakdir/NowTarredfs/" "$remote/$name/"
 
     now=$(date -Iseconds)
-    touch "$beakdir/beak/mirroring_${host}_${date}_stopped_${now}"
+    touch "$beakdir/beak/mirror_${date}_stopped_${now}"
     rclone -q copy "$beakdir/beak/" "$remote/$name/.beak/"
     
     rm -rf "$beakdir/beak"
     mv "$beakdir/Now" "$beakdir/Backup-$date"
     mv "$beakdir/NowTarredfs.list" "$beakdir/Backup-${date}.list"
     cleanup
-    echo "$date $remote/$name" >> "$push_file"
+    echo "$date $remote/$name" >> "$pushes"
 
     if [ "$PREV" != "NoPreviousBackup" ]
     then
-        ls --directory "$beakdir/Backup-"* | grep -v .list | head --lines=-2 | while read line
+        ls --directory "$beakdir/Backup-"* | grep -v .list | head --lines=-1 | while read line
         do
             btrfs property set -ts "$line" ro false
-            btrfs subvolume delete "$line" > /dev/null
+            btrfs subvolume delete "$line"
             rm -f "${line}.list"
         done
     fi
 else
     cleanup
     btrfs property set -ts "$beakdir/Now" ro false
-    btrfs subvolume delete "$beakdir/Now" > /dev/null
+    btrfs subvolume delete "$beakdir/Now"
 fi
 
 ok="true"

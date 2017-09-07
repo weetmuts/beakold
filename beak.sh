@@ -63,6 +63,7 @@ fi
 case $1 in
     config) cmd=config ;;
     push) cmd=push ;;
+    pull) cmd=pull ;;
     mount) cmd=mount ;;
     umount) cmd=umount ;;
     status) cmd=status ;;
@@ -97,5 +98,10 @@ then
     remote="$1"
 fi
 
-"${PRE}/beak-$cmd${SUF}" "$local" "$remote"
+if [ "$debug" = "true" ]
+then
+    bash -x "${PRE}/beak-$cmd${SUF}" "$local" "$remote"
+else
+    "${PRE}/beak-$cmd${SUF}" "$local" "$remote"
+fi
 
